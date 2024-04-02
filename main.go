@@ -3,20 +3,14 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
+	"file-manager/routes"
 	"github.com/gin-gonic/gin"
 	"log"
-	"mime/multipart"
 	"net/http"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 )
-
-type BindFile struct {
-	File *multipart.FileHeader `form:"file" binding:"required"`
-}
 
 func main() {
 	// Create context that listens for the interrupt signal from the OS.
@@ -26,29 +20,9 @@ func main() {
 	router := gin.Default()
 	// Set a lower memory limit for multipart forms (default is 32 MiB)
 	router.MaxMultipartMemory = 8 << 20 // 8 MiB
-	router.POST("/upload", func(c *gin.Context) {
-		var bindFile BindFile
 
-		// Bind file
-		if err := c.ShouldBind(&bindFile); err != nil {
-			c.String(http.StatusBadRequest, fmt.Sprintf("err: %s", err.Error()))
-			return
-		}
-
-		// Save uploaded file
-		file := bindFile.File
-		dst := filepath.Join("uploaded", filepath.Base(file.Filename))
-		if err := c.SaveUploadedFile(file, dst); err != nil {
-			c.String(http.StatusBadRequest, fmt.Sprintf("upload file err: %s", err.Error()))
-			return
-		}
-
-		c.String(http.StatusOK, fmt.Sprintf("File %s uploaded successfully.", file.Filename))
-	})
-
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
-	})
+	router.POST("/upload", routes.UploadRoute)
+	router.GET("/ping", routes.PingRoute)
 
 	srv := &http.Server{
 		Addr:    ":8080",
