@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"file-manager/background"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"mime/multipart"
@@ -29,6 +30,6 @@ func UploadRoute(c *gin.Context) {
 		return
 	}
 
-	// TODO: Process uploaded file
+	go background.ProcessFile(dst)
 	c.String(http.StatusOK, fmt.Sprintf("File %s uploaded successfully.", file.Filename))
 }
