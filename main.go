@@ -15,9 +15,7 @@ import (
 )
 
 type BindFile struct {
-	Name  string                `form:"name" binding:"required"`
-	Email string                `form:"email" binding:"required"`
-	File  *multipart.FileHeader `form:"file" binding:"required"`
+	File *multipart.FileHeader `form:"file" binding:"required"`
 }
 
 func main() {
@@ -39,13 +37,13 @@ func main() {
 
 		// Save uploaded file
 		file := bindFile.File
-		dst := filepath.Base(file.Filename)
+		dst := filepath.Join("uploaded", filepath.Base(file.Filename))
 		if err := c.SaveUploadedFile(file, dst); err != nil {
 			c.String(http.StatusBadRequest, fmt.Sprintf("upload file err: %s", err.Error()))
 			return
 		}
 
-		c.String(http.StatusOK, fmt.Sprintf("File %s uploaded successfully with fields name=%s and email=%s.", file.Filename, bindFile.Name, bindFile.Email))
+		c.String(http.StatusOK, fmt.Sprintf("File %s uploaded successfully.", file.Filename))
 	})
 
 	router.GET("/ping", func(c *gin.Context) {
