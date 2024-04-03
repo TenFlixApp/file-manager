@@ -17,7 +17,7 @@ func CreateFileMetadata(file *File) {
 		return
 	}
 
-	_, err = tx.Exec(`INSERT INTO files (id, title) VALUES ($1, $2)`, file.ID, file.Title)
+	_, err = tx.Exec(`INSERT INTO files (id, title) VALUES (?, ?)`, file.ID, file.Title)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
 			log.Fatalf("insert files: unable to rollback: %v", rollbackErr)
