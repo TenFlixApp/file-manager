@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"file-manager/background"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"mime/multipart"
@@ -10,7 +9,8 @@ import (
 )
 
 type BindFile struct {
-	File *multipart.FileHeader `form:"file" binding:"required"`
+	File  *multipart.FileHeader `form:"file" binding:"required"`
+	Cover *multipart.FileHeader `form:"cover" binding:"required"`
 }
 
 func UploadRoute(c *gin.Context) {
@@ -22,14 +22,22 @@ func UploadRoute(c *gin.Context) {
 		return
 	}
 
-	// Save uploaded file
+	// Save uploaded video
 	file := bindFile.File
-	dst := filepath.Join("uploaded", filepath.Base(file.Filename))
+	dst := filepath.Join("uploaded", "video", filepath.Base(file.Filename))
 	if err := c.SaveUploadedFile(file, dst); err != nil {
 		c.String(http.StatusBadRequest, fmt.Sprintf("upload file err: %s", err.Error()))
 		return
 	}
 
-	go background.ProcessFile(dst)
+	// Save uploaded cover
+	cover := bindFile.File
+	dst = filepath.Join("uploaded", "cover", filepath.Base(cover.Filename))
+	if err := c.SaveUploadedFile(cover, dst); err != nil {
+		c.String(http.StatusBadRequest, fmt.Sprintf("upload file err: %s", err.Error()))
+		return
+	}
+
+	//TODO: Hydrate DB
 	c.String(http.StatusOK, fmt.Sprintf("File %s uploaded successfully.", file.Filename))
 }

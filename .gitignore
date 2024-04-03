@@ -24,3 +24,4 @@ go.work
 ## Custom values
 
 .idea
+.env
