@@ -32,10 +32,13 @@ func main() {
 	// Set a lower memory limit for multipart forms (default is 32 MiB)
 	router.MaxMultipartMemory = 8 << 20 // 8 MiB
 
-	router.POST("/upload", routes.UploadRoute)
 	router.GET("/ping", routes.PingRoute)
-	router.GET("/:id/stream", routes.StreamVideo)
-	router.GET("/:id/cover", routes.StreamCover)
+
+	router.POST("/upload", routes.UploadRoute)
+	router.GET("/files/:id", routes.FileInfoRoute)
+	router.DELETE("/files/:id", routes.DestroyRoute)
+	router.GET("/files/:id/stream", routes.StreamVideo)
+	router.GET("/files/:id/cover", routes.StreamCover)
 
 	srv := &http.Server{
 		Addr:    ":8080",

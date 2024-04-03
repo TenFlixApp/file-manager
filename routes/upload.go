@@ -10,16 +10,17 @@ import (
 	"path/filepath"
 )
 
-type BindFile struct {
+type Form struct {
+	Title string                `form:"title" binding:"required"`
 	File  *multipart.FileHeader `form:"file" binding:"required"`
 	Cover *multipart.FileHeader `form:"cover" binding:"required"`
 }
 
 func UploadRoute(c *gin.Context) {
-	var bindFile BindFile
+	var form Form
 
-	// Bind file
-	if err := c.ShouldBind(&bindFile); err != nil {
+	// Bind form data
+	if err := c.ShouldBind(&form); err != nil {
 		c.String(http.StatusBadRequest, fmt.Sprintf("err: %s", err.Error()))
 		return
 	}
@@ -28,25 +29,24 @@ func UploadRoute(c *gin.Context) {
 	id := uuid.New()
 
 	// Save uploaded video
-	file := bindFile.File
-	dst := filepath.Join("uploaded", "video", id.String()+".mp4")
+	file := form.File
+	dst := filepath.Join("uploaded", "video", id.String())
 	if err := c.SaveUploadedFile(file, dst); err != nil {
-		c.String(http.StatusBadRequest, fmt.Sprintf("upload file err: %s", err.Error()))
+		c.String(http.StatusBadRequest, fmt.Sprintf("upload video err: %s", err.Error()))
 		return
 	}
 
 	// Save uploaded cover
-	cover := bindFile.File
-	dst = filepath.Join("uploaded", "cover", id.String()+".png")
+	cover := form.Cover
+	dst = filepath.Join("uploaded", "cover", id.String())
 	if err := c.SaveUploadedFile(cover, dst); err != nil {
-		c.String(http.StatusBadRequest, fmt.Sprintf("upload file err: %s", err.Error()))
+		c.String(http.StatusBadRequest, fmt.Sprintf("upload cover err: %s", err.Error()))
 		return
 	}
 
-	//TODO: Hydrate DB
 	data.CreateFileMetadata(&data.File{
 		ID:    id,
-		Title: "File Title",
+		Title: form.Title,
 	})
 	c.String(http.StatusOK, fmt.Sprintf("File %s uploaded successfully.", file.Filename))
 }
