@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"errors"
+	"file-manager/data"
 	"file-manager/routes"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os/signal"
@@ -13,16 +15,30 @@ import (
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	// Connect to the database
+	data.ConnectToDB()
+	defer data.CloseDB()
 
 	router := gin.Default()
 	// Set a lower memory limit for multipart forms (default is 32 MiB)
 	router.MaxMultipartMemory = 8 << 20 // 8 MiB
 
-	router.POST("/upload", routes.UploadRoute)
 	router.GET("/ping", routes.PingRoute)
+
+	router.POST("/upload", routes.UploadRoute)
+	router.GET("/files/:id", routes.FileInfoRoute)
+	router.DELETE("/files/:id", routes.DestroyRoute)
+	router.GET("/files/:id/stream", routes.StreamVideo)
+	router.GET("/files/:id/cover", routes.StreamCover)
 
 	srv := &http.Server{
 		Addr:    ":8080",
