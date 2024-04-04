@@ -2,7 +2,6 @@ package routes
 
 import (
 	"file-manager/data"
-	"file-manager/helpers"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
@@ -31,9 +30,11 @@ func FileInfoRoute(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":         file.ID,
-		"title":      file.Title,
-		"stream_url": helpers.GenerateRouteLink(c.Request, "/files/"+file.ID.String()+"/stream"),
-		"cover_url":  helpers.GenerateRouteLink(c.Request, "/files/"+file.ID.String()+"/cover"),
+		"id":    file.ID,
+		"title": file.Title,
+		"_links": gin.H{
+			"stream": "/files/" + file.ID.String() + "/stream",
+			"cover":  "/files/" + file.ID.String() + "/cover",
+		},
 	})
 }
