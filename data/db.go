@@ -13,8 +13,14 @@ func ConnectToDB() {
 	var err error
 	db, err = sql.Open("mysql", os.Getenv("DB_CONN_STRING"))
 	if err != nil {
-		panic(err)
+		log.Fatal("Unable to create DB handle", err)
 	}
+
+	err = db.Ping()
+	if err != nil {
+		log.Fatal("Failed to connect to the DB", err)
+	}
+	log.Println("Connected to the database")
 }
 
 func CloseDB() {
