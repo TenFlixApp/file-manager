@@ -5,20 +5,29 @@ import (
 	"errors"
 	"file-manager/data"
 	"file-manager/routes"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"log"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
 )
 
-func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+func checkEnv() {
+	envs := []string{"APP_PORT", "DB_CONN_STRING"}
+	for _, env := range envs {
+		if value, success := os.LookupEnv(env); !success || value == "" {
+			log.Fatalf("Environment variable %s is not set", env)
+		}
 	}
+}
+
+func main() {
+	_ = godotenv.Load()
+	checkEnv()
 
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -40,8 +49,9 @@ func main() {
 	router.GET("/files/:id/stream", routes.StreamVideo)
 	router.GET("/files/:id/cover", routes.StreamCover)
 
+	appPort := os.Getenv("APP_PORT")
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + appPort,
 		Handler: router,
 	}
 
@@ -52,6 +62,8 @@ func main() {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
+
+	fmt.Println("Server is running on port " + appPort)
 
 	// Listen for the interrupt signal.
 	<-ctx.Done()
