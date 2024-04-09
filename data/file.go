@@ -5,40 +5,90 @@ import (
 	"log"
 )
 
-type File struct {
-	ID    uuid.UUID
-	Title string
+type FileType struct {
+	ID   int
+	Name string
 }
 
-func CreateFileMetadata(file *File) {
-	tx, err := db.Begin()
-	if err != nil {
-		log.Fatalf("Unable to start transaction: %v\n", err)
-		return
+type File struct {
+	ID   uuid.UUID
+	Type FileType
+}
+
+func getFileType(name string, create bool) *FileType {
+	fileType := &FileType{
+		Name: name,
 	}
 
-	_, err = tx.Exec(`INSERT INTO files (id, title) VALUES (?, ?)`, file.ID, file.Title)
+	err := db.QueryRow(`SELECT id FROM file_types WHERE name = ?`, name).Scan(&fileType.ID)
+	if err != nil {
+		log.Printf("Unable to get file type: %v\n", err)
+		return nil
+	}
+
+	if fileType.ID == 0 && create {
+		res, err := db.Exec(`INSERT INTO file_types (name) VALUES (?)`, name)
+		if err != nil {
+			log.Printf("Unable to create file type: %v\n", err)
+			return nil
+		}
+
+		lastInsertId, err := res.LastInsertId()
+		if err != nil {
+			log.Println("Unable to get last insert ID")
+			return nil
+		}
+
+		fileType.ID = int(lastInsertId)
+	}
+
+	return fileType
+
+}
+
+func CreateFileMetadata(file *File) bool {
+	tx, err := db.Begin()
+	if err != nil {
+		log.Printf("Unable to start transaction: %v\n", err)
+		return false
+	}
+
+	if file.Type.ID == 0 {
+		tempType := getFileType(file.Type.Name, true)
+		if tempType == nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				log.Printf("insert files: unable to rollback: %v\n", rollbackErr)
+			}
+			return false
+		}
+
+		file.Type = *tempType
+	}
+
+	_, err = tx.Exec(`INSERT INTO files (id, type) VALUES (?, ?)`, file.ID, file.Type.ID)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			log.Fatalf("insert files: unable to rollback: %v", rollbackErr)
+			log.Printf("insert files: unable to rollback: %v\n", rollbackErr)
 		}
-		log.Fatal(err)
-		return
+		log.Println(err)
+		return false
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		log.Fatalf("Unable to commit transaction: %v\n", err)
-		return
+		log.Printf("Unable to commit transaction: %v\n", err)
+		return false
 	}
 
-	log.Println("Inserted file into database")
+	return true
 }
 
 func GetFileMetadata(id uuid.UUID) *File {
-	file := &File{}
+	file := &File{
+		Type: FileType{},
+	}
 
-	err := db.QueryRow(`SELECT id, title FROM files WHERE id = ?`, id).Scan(&file.ID, &file.Title)
+	err := db.QueryRow(`SELECT f.id, ft.id, ft.name FROM files f JOIN file_types ft ON (f.type = ft.id) WHERE f.id = ?`, id).Scan(&file.ID, &file.Type.ID, &file.Type.Name)
 	if err != nil {
 		log.Fatalf("Unable to get file metadata: %v\n", err)
 		return nil

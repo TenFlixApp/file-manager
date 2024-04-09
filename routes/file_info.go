@@ -30,8 +30,8 @@ func FileInfoRoute(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":    file.ID,
-		"title": file.Title,
+		"id":   file.ID,
+		"type": file.Type.Name,
 		"_links": gin.H{
 			"stream": "/files/" + file.ID.String() + "/stream",
 			"cover":  "/files/" + file.ID.String() + "/cover",
