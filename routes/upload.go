@@ -11,7 +11,6 @@ import (
 )
 
 type Form struct {
-	Title string                `form:"title" binding:"required"`
 	File  *multipart.FileHeader `form:"file" binding:"required"`
 	Cover *multipart.FileHeader `form:"cover" binding:"required"`
 }
@@ -45,8 +44,10 @@ func UploadRoute(c *gin.Context) {
 	}
 
 	data.CreateFileMetadata(&data.File{
-		ID:    id,
-		Title: form.Title,
+		ID: id,
+		Type: data.FileType{
+			Name: "media",
+		},
 	})
-	c.String(http.StatusOK, fmt.Sprintf("File %s uploaded successfully.", file.Filename))
+	c.String(http.StatusOK, id.String())
 }
