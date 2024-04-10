@@ -2,10 +2,11 @@ package routes
 
 import (
 	"file-manager/data"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func FileInfoRoute(c *gin.Context) {
@@ -79,5 +80,5 @@ func RandomFileRoute(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, payload)
+	c.JSON(http.StatusOK, gin.H{"medias": payload})
 }
