@@ -43,11 +43,16 @@ func main() {
 
 	router.GET("/ping", routes.PingRoute)
 
-	router.POST("/upload", routes.UploadRoute)
+	// Media routes
+	router.POST("/upload", routes.UploadMediaRoute)
 	router.GET("/files/:id", routes.FileInfoRoute)
 	router.DELETE("/files/:id", routes.DestroyRoute)
 	router.GET("/files/:id/stream", routes.StreamVideo)
 	router.GET("/files/:id/cover", routes.StreamCover)
+
+	// Generic storage routes
+	router.GET("/storage/:id", routes.StreamGeneric)
+	router.POST("/storage", routes.UploadGenericRoute)
 
 	appPort := os.Getenv("APP_PORT")
 	srv := &http.Server{
