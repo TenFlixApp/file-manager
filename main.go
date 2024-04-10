@@ -17,7 +17,7 @@ import (
 )
 
 func checkEnv() {
-	envs := []string{"APP_PORT", "DB_CONN_STRING"}
+	envs := []string{"DB_CONN_STRING"}
 	for _, env := range envs {
 		if value, success := os.LookupEnv(env); !success || value == "" {
 			log.Fatalf("Environment variable %s is not set", env)
@@ -55,9 +55,8 @@ func main() {
 	router.GET("/storage/:id", routes.StreamGeneric)
 	router.POST("/storage", routes.UploadGenericRoute)
 
-	appPort := os.Getenv("APP_PORT")
 	srv := &http.Server{
-		Addr:    ":" + appPort,
+		Addr:    ":8080",
 		Handler: router,
 	}
 
@@ -69,7 +68,7 @@ func main() {
 		}
 	}()
 
-	fmt.Println("Server is running on port " + appPort)
+	fmt.Println("Server is running on port 8080")
 
 	// Listen for the interrupt signal.
 	<-ctx.Done()
