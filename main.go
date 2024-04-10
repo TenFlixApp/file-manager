@@ -6,14 +6,15 @@ import (
 	"file-manager/data"
 	"file-manager/routes"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func checkEnv() {
@@ -56,7 +57,7 @@ func main() {
 	router.POST("/storage", routes.UploadGenericRoute)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + os.Getenv("APP_PORT"),
 		Handler: router,
 	}
 
@@ -68,7 +69,7 @@ func main() {
 		}
 	}()
 
-	fmt.Println("Server is running on port 8080")
+	fmt.Printf("Server is running on port %s \n", srv.Addr)
 
 	// Listen for the interrupt signal.
 	<-ctx.Done()
