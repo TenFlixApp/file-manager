@@ -16,20 +16,21 @@ type File struct {
 	Type FileType
 }
 
-func getFileType(name string, create bool) *FileType {
+func getFileType(tx *sql.Tx, name string, create bool) *FileType {
 	fileType := &FileType{
 		Name: name,
 	}
 
-	err := db.QueryRow(`SELECT id FROM file_types WHERE name = ?`, name).Scan(&fileType.ID)
+	err := tx.QueryRow(`SELECT id FROM file_types WHERE name = ?`, name).Scan(&fileType.ID)
 	if err != nil {
 		log.Printf("Unable to get file type: %v\n", err)
 		return nil
 	}
 
 	if fileType.ID == 0 && create {
-		res, err := db.Exec(`INSERT INTO file_types (name) VALUES (?)`, name)
-		if err != nil {
+
+		res, err := tx.Exec(`INSERT INTO file_types (name) VALUES (?)`, name)
+		if handleSqlError(err, tx) {
 			log.Printf("Unable to create file type: %v\n", err)
 			return nil
 		}
@@ -47,40 +48,27 @@ func getFileType(name string, create bool) *FileType {
 }
 
 func CreateFileMetadata(file *File) bool {
-	tx, err := db.Begin()
-	if err != nil {
-		log.Printf("Unable to start transaction: %v\n", err)
+	tx := createTransaction()
+	if tx == nil {
 		return false
 	}
 
 	if file.Type.ID == 0 {
-		tempType := getFileType(file.Type.Name, true)
+		tempType := getFileType(tx, file.Type.Name, true)
 		if tempType == nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				log.Printf("insert files: unable to rollback: %v\n", rollbackErr)
-			}
+			handleRollback(tx)
 			return false
 		}
 
 		file.Type = *tempType
 	}
 
-	_, err = tx.Exec(`INSERT INTO files (id, type) VALUES (?, ?)`, file.ID, file.Type.ID)
-	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			log.Printf("insert files: unable to rollback: %v\n", rollbackErr)
-		}
-		log.Println(err)
+	_, err := tx.Exec(`INSERT INTO files (id, type) VALUES (?, ?)`, file.ID, file.Type.ID)
+	if handleSqlError(err, tx) {
 		return false
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		log.Printf("Unable to commit transaction: %v\n", err)
-		return false
-	}
-
-	return true
+	return !handleTxCommit(tx)
 }
 
 func GetFileMetadata(id uuid.UUID) *File {
@@ -89,10 +77,7 @@ func GetFileMetadata(id uuid.UUID) *File {
 	}
 
 	err := db.QueryRow(`SELECT f.id, ft.id, ft.name FROM files f JOIN file_types ft ON (f.type = ft.id) WHERE f.id = ?`, id).Scan(&file.ID, &file.Type.ID, &file.Type.Name)
-	if err != nil {
-		log.Fatalf("Unable to get file metadata: %v\n", err)
-		return nil
-	}
+	handleSqlError(err, nil)
 
 	return file
 }
@@ -119,8 +104,7 @@ func GetRandomFileMetadata(cnt int, typ string) []*File {
 			Type: FileType{},
 		}
 		err := query.Scan(&file.ID, &file.Type.ID, &file.Type.Name)
-		if err != nil {
-			log.Fatalf("Unable to scan file metadata: %v\n", err)
+		if handleSqlError(err, nil) {
 			return nil
 		}
 
@@ -131,27 +115,15 @@ func GetRandomFileMetadata(cnt int, typ string) []*File {
 }
 
 func DeleteFileMetadata(id uuid.UUID) bool {
-	tx, err := db.Begin()
-	if err != nil {
-		log.Fatalf("Unable to start transaction: %v\n", err)
+	tx := createTransaction()
+	if tx == nil {
 		return false
 	}
 
-	_, err = tx.Exec(`DELETE FROM files WHERE id = ?`, id)
-	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			log.Fatalf("delete files: unable to rollback: %v", rollbackErr)
-		}
-		log.Fatal(err)
+	_, err := tx.Exec(`DELETE FROM files WHERE id = ?`, id)
+	if handleSqlError(err, tx) {
 		return false
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		log.Fatalf("Unable to commit transaction: %v\n", err)
-		return false
-	}
-
-	log.Println("Deleted file from database")
-	return true
+	return !handleTxCommit(tx)
 }

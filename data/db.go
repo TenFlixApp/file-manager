@@ -29,3 +29,41 @@ func CloseDB() {
 		log.Fatalln("Error closing the database connection")
 	}
 }
+
+func createTransaction() *sql.Tx {
+	tx, err := db.Begin()
+	if err != nil {
+		log.Printf("Unable to start transaction: %v\n", err)
+		return nil
+	}
+	return tx
+}
+
+func handleRollback(tx *sql.Tx) bool {
+	if rollbackErr := tx.Rollback(); rollbackErr != nil {
+		log.Printf("insert files: unable to rollback: %v\n", rollbackErr)
+		return false
+	}
+	return true
+}
+
+func handleTxCommit(tx *sql.Tx) bool {
+	err := tx.Commit()
+	if err != nil {
+		log.Printf("Unable to commit transaction: %v\n", err)
+		return false
+	}
+	return true
+}
+
+func handleSqlError(err error, tx *sql.Tx) bool {
+	if err != nil {
+		if tx != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				log.Printf("insert files: unable to rollback: %v\n", rollbackErr)
+			}
+		}
+		log.Println(err)
+	}
+	return err != nil
+}
