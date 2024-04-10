@@ -43,7 +43,6 @@ func getFileType(name string, create bool) *FileType {
 	}
 
 	return fileType
-
 }
 
 func CreateFileMetadata(file *File) bool {
@@ -97,11 +96,11 @@ func GetFileMetadata(id uuid.UUID) *File {
 	return file
 }
 
-func DeleteFileMetadata(id uuid.UUID) {
+func DeleteFileMetadata(id uuid.UUID) bool {
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatalf("Unable to start transaction: %v\n", err)
-		return
+		return false
 	}
 
 	_, err = tx.Exec(`DELETE FROM files WHERE id = ?`, id)
@@ -110,14 +109,15 @@ func DeleteFileMetadata(id uuid.UUID) {
 			log.Fatalf("delete files: unable to rollback: %v", rollbackErr)
 		}
 		log.Fatal(err)
-		return
+		return false
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		log.Fatalf("Unable to commit transaction: %v\n", err)
-		return
+		return false
 	}
 
 	log.Println("Deleted file from database")
+	return true
 }
