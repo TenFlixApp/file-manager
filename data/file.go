@@ -1,6 +1,7 @@
 package data
 
 import (
+	"database/sql"
 	"github.com/google/uuid"
 	"log"
 )
@@ -94,6 +95,39 @@ func GetFileMetadata(id uuid.UUID) *File {
 	}
 
 	return file
+}
+
+func GetRandomFileMetadata(cnt int, typ string) []*File {
+	var (
+		videos = make([]*File, 0)
+		query  *sql.Rows
+		err    error
+	)
+
+	if typ == "" {
+		query, err = db.Query(`SELECT f.id, ft.id, ft.name FROM files f JOIN file_types ft ON (f.type = ft.id) ORDER BY RAND() LIMIT ?`, cnt)
+	} else {
+		query, err = db.Query(`SELECT f.id, ft.id, ft.name FROM files f JOIN file_types ft ON (f.type = ft.id) WHERE ft.name = ? ORDER BY RAND() LIMIT ?`, typ, cnt)
+	}
+
+	if err != nil {
+		return nil
+	}
+
+	for query.Next() {
+		file := &File{
+			Type: FileType{},
+		}
+		err := query.Scan(&file.ID, &file.Type.ID, &file.Type.Name)
+		if err != nil {
+			log.Fatalf("Unable to scan file metadata: %v\n", err)
+			return nil
+		}
+
+		videos = append(videos, file)
+	}
+
+	return videos
 }
 
 func DeleteFileMetadata(id uuid.UUID) bool {

@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
+	"strconv"
 )
 
 func FileInfoRoute(c *gin.Context) {
@@ -44,4 +45,39 @@ func FileInfoRoute(c *gin.Context) {
 		"type":   file.Type.Name,
 		"_links": linksPayload,
 	})
+}
+
+func RandomFileRoute(c *gin.Context) {
+	count, success := c.GetQuery("count")
+
+	if !success {
+		c.String(http.StatusBadRequest, "id is required")
+		return
+	}
+
+	parsedCount, err := strconv.Atoi(count)
+	if err != nil {
+		c.String(http.StatusBadRequest, "count must be a valid integer")
+		return
+	}
+
+	typ, success := c.GetQuery("type")
+	if !success {
+		typ = "media"
+	}
+
+	files := data.GetRandomFileMetadata(parsedCount, typ)
+	var payload = make([]gin.H, len(files))
+	for i, file := range files {
+		payload[i] = gin.H{
+			"id":   file.ID,
+			"type": file.Type.Name,
+			"_links": gin.H{
+				"stream": "/files/" + file.ID.String() + "/stream",
+				"cover":  "/files/" + file.ID.String() + "/cover",
+			},
+		}
+	}
+
+	c.JSON(http.StatusOK, payload)
 }

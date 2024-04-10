@@ -46,6 +46,7 @@ func main() {
 	// Media routes
 	router.POST("/upload", routes.UploadMediaRoute)
 	router.GET("/files/:id", routes.FileInfoRoute)
+	router.GET("/files/random", routes.RandomFileRoute)
 	router.DELETE("/files/:id", routes.DestroyRoute)
 	router.GET("/files/:id/stream", routes.StreamVideo)
 	router.GET("/files/:id/cover", routes.StreamCover)
