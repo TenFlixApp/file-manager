@@ -57,7 +57,7 @@ func main() {
 	router.POST("/storage", routes.UploadGenericRoute)
 
 	srv := &http.Server{
-		Addr:    ":" + os.Getenv("APP_PORT"),
+		Addr:    ":8888",
 		Handler: router,
 	}
 
