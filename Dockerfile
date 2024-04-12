@@ -9,5 +9,5 @@ COPY routes/ ./routes/
 COPY *.go ./
 RUN go build -o ./export.out
 
-EXPOSE 8080/tcp
+EXPOSE 8888/tcp
 CMD ["/app/export.out"]
