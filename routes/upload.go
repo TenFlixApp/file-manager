@@ -3,11 +3,12 @@ package routes
 import (
 	"file-manager/data"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type GenericForm struct {
@@ -22,17 +23,13 @@ type MediaForm struct {
 
 func UploadMediaRoute(c *gin.Context) {
 	var form MediaForm
-
-	// Bind form data
 	if err := c.ShouldBind(&form); err != nil {
 		c.String(http.StatusBadRequest, fmt.Sprintf("err: %s", err.Error()))
 		return
 	}
 
-	// Generate new UUID
 	id := uuid.New()
 
-	// Save uploaded video
 	file := form.Video
 	dst := filepath.Join("uploaded", "video", id.String())
 	if err := c.SaveUploadedFile(file, dst); err != nil {
@@ -40,7 +37,6 @@ func UploadMediaRoute(c *gin.Context) {
 		return
 	}
 
-	// Save uploaded cover
 	cover := form.Cover
 	dst = filepath.Join("uploaded", "cover", id.String())
 	if err := c.SaveUploadedFile(cover, dst); err != nil {
@@ -61,16 +57,13 @@ func UploadMediaRoute(c *gin.Context) {
 func UploadGenericRoute(c *gin.Context) {
 	var form GenericForm
 
-	// Bind form data
 	if err := c.ShouldBind(&form); err != nil {
 		c.String(http.StatusBadRequest, fmt.Sprintf("err: %s", err.Error()))
 		return
 	}
 
-	// Generate new UUID
 	id := uuid.New()
 
-	// Save uploaded video
 	file := form.File
 	dst := filepath.Join("uploaded", form.Type, id.String())
 	if err := c.SaveUploadedFile(file, dst); err != nil {
